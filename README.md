@@ -5,10 +5,15 @@ This project demonstrates a keylogging tool that captures keystrokes, records au
 ## Features
 
   1- Keylogging: Captures keystrokes and logs them with a timestamp.
+  
   2- Audio Recording: Records audio from the microphone and sends the audio file via email.
+  
   3- Screenshot Capture: Takes screenshots of the user's desktop.
+  
   4- System Information: Gathers details about the system such as hostname, IP address, processor type, etc.
+  
   5- Periodic Email Reports: Sends logs, screenshots, and audio recordings via email to a predefined address.
+  
 ## Setup
 
 ### Requirements
