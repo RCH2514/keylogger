@@ -18,7 +18,7 @@ To run this script, ensure you have the required Python packages installed:
 
 1- Install dependencies by running the following command:
 
-pip install pyscreenshot sounddevice keyboard
+```pip install pyscreenshot sounddevice keyboard```
 
 2- Update the EMAIL_ADDRESS and EMAIL_PASSWORD variables with your email credentials to send reports.4
 
