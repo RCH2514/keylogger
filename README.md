@@ -1,6 +1,9 @@
 Keylogger Project: 
+
 This project demonstrates a keylogging tool that captures keystrokes, records audio, takes screenshots, and gathers system information. It is designed for educational purposes only and should never be used for any malicious or unethical activity. Always seek explicit consent before running any software that monitors or records user activity.
+
 Features
+
   1- Keylogging: Captures keystrokes and logs them with a timestamp.
   2- Audio Recording: Records audio from the microphone and sends the audio file via email.
   3- Screenshot Capture: Takes screenshots of the user's desktop.
