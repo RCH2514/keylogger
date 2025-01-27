@@ -13,14 +13,7 @@ This project demonstrates a keylogging tool that captures keystrokes, records au
 
 ### Requirements
 
-To run this script, ensure you have the required Python packages installed:
-
-
-1- Install dependencies by running the following command:
-
-```pip install pyscreenshot sounddevice keyboard```
-
-2- Update the EMAIL_ADDRESS and EMAIL_PASSWORD variables with your email credentials to send reports.4
+This script automatically installs any missing dependencies when run. If a module is not found, the script will attempt to install the necessary packages using ```pip```.
 
 ### Usage
 
