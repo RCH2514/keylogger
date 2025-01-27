@@ -26,15 +26,15 @@ To run this script, ensure you have the required Python packages installed:
 
 Clone the repository:
 
-```git clone https://github.com/your-username/keylogger-project.git```
+```git clone https://github.com/RCH2514/keylogger.git```
 
 Navigate to the project folder:
 
-```cd keylogger-project```
+```cd keylogger```
 
 Run the Python script:
 
-```python keylogger.py```
+```python keyloggerr.py```
 
 The program will start logging keystrokes, capturing screenshots, and recording audio as per the interval defined. It will send periodic email reports with the captured data.
 
