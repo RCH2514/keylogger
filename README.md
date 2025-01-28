@@ -13,6 +13,8 @@ This project demonstrates a keylogging tool that captures keystrokes, records au
   4- System Information: Gathers details about the system such as hostname, IP address, processor type, etc.
   
   5- Periodic Email Reports: Sends logs, screenshots, and audio recordings via email to a predefined address.
+
+  6- Deletes itself automatically when discovered by the user to simulate real-world keylogger behavior.
   
 ## Setup
 
